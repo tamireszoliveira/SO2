@@ -2,7 +2,7 @@
  
 **Nome do Aluno:** Tamires Alexandre de Oliveira
 **Turno:** Noite
-**Data do Último Commit:** 15/11/2025
+**Data do Último Commit:** 25/11/2025
 
 ## ATIVIDADE 1: Relatório das Práticas de Aula 
 ### Capítulo 6: Práticas de Discos e Montagem 
@@ -38,6 +38,24 @@ Filesystem      Size  Used Avail Use% Mounted on
 /dev/sr0        1024M  1024M     0 100% /home/userlinux/cdrom
 cat /home/userlinux/cdrom/arquivo.txt:
 AIED VIVO
+
+### Capítulo 7: Práticas de Processos 
+ 
+#### Prática prc0001 01 (Livro-Texto p. 233)
+
+O objetivo foi mostrar a localização de processos python ativos no sistema utilizando comandos de terminal. Para isso, foram executados os seguintes passos:
+
+- No diretório pessoal, foi gerada a localidade en_US.UTF-8 com o comando sudo locale-gen"en_US.UTF-8", garantindo compatibilidade com ferramentas e scripts.
+- Foi usado o comando script para iniciar o registro da sessão, que grava todas as ações realizadas no terminal.
+- Utilizou-se o comando ps aux | grep python para listar todos os processos ativos e filtrar aqueles relacionados ao Python.
+- Encerrada a sessão com o comando exit.
+- Por fim, a validação da prática com o comando sudo aied validar prc0001 checkpoint01, que analisou o conteúdo do arquivo typescript e confirmou a execução correta dos comandos.
+Evidência de Validação:
+
+
+# Saída do comando 'cat /home/userlinux/typescript' (após filtrar por 'python')
+userlinux@debian:~$ ps aux | grep python
+userlin+     970  0.0  0.1   6336  2132 pts/2    S+   22:44   0:00 grep python
 
 
 
