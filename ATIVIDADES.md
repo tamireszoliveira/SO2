@@ -53,10 +53,55 @@ O objetivo foi mostrar a localização de processos python ativos no sistema uti
 Evidência de Validação:
 
 
-# Saída do comando 'cat /home/userlinux/typescript' (após filtrar por 'python')
+Saída do comando 'cat /home/userlinux/typescript' (após filtrar por 'python')
 userlinux@debian:~$ ps aux | grep python
 userlin+     970  0.0  0.1   6336  2132 pts/2    S+   22:44   0:00 grep python
 
+### Capítulo 9: Práticas de Redes 
+ 
+#### Prática 0002 checkpoint03 (Livro-Texto p. 286)
 
+
+
+### Códigos do Capítulo 6 (Discos e Montagem) 
+ 
+#### `devices.cpp` (Livro-Texto p. 151-152) 
+ 
+* **Objetivo do Código:** Ler o arquivo virtual `/proc/mounts` para descobrir e imprimir qual 
+dispositivo de bloco (ex: `/dev/sda1`) está atualmente montado no diretório raiz (`/`). 
+* **Código-Fonte:** 
+    ```cpp 
+    #include <iostream> 
+    #include <fstream> 
+    #include <optional> 
+    #include <string> 
+ 
+    std::optional<std::string> get_device_of_mount_point(std::string path) { 
+        std::ifstream mounts("/proc/mounts"); 
+        std::string mountPoint; 
+        std::string device; 
+        while (mounts >> device >> mountPoint) { 
+            if (mountPoint == path) 
+                return device; 
+        } 
+        return std::nullopt; 
+    } 
+ 
+    int main() { 
+        if (const auto device = get_device_of_mount_point("/")) 
+            std::cout << *device << "\n"; 
+        else 
+            std::cout << "Not found\n"; 
+    } 
+    ``` 
+* **Análise da Saída:** 
+    * *Comando de Compilação:* `g++ -o devices devices.cpp -std=c++17` 
+    * *Saída da Execução:* 
+        ```bash 
+        /dev/sda1
+        ``` 
+    * *Breve Descrição:* (Explique o que a saída significa. O dispositivo que apareceu (ex: `/dev/sda1`) é 
+o que você esperava para a sua partição raiz? Por quê?) 
+A saída foi a esperada pois o dispositivo que apareceu na saída do programa foi /dev/sda1; é o esperado para a partição raiz () do sistema, pois em instalações típicas do Linux — especialmente em ambientes de máquina virtual — o disco principal costuma ser identificado como sda, e a primeira partição como sda1.
 
 
