@@ -749,8 +749,366 @@ SIGINT.
     * *Breve Descrição:* Durante os primeiros 5 segundos, o programa imprime repetidamente "dentro do laço de repetição infinita".	Quando i ==5, o comando raise(SIGINT) é chamado. Isso     envia o sinal SIGINT (2) para o próprio processo. 	Como o programa registrou um handler (), essa função é chamada em vez de encerrar silenciosamente.	O handler imprime "Auto-sinal      recebido: (2) e depois chama exit(signum), encerrando o programa sozinho depois de 5s.
 
       
+ 
+#### `killsignal.cpp` (Livro-Texto p. 205) 
+ 
+* **Objetivo do Código:** Demonstrar como um processo pode enviar um sinal para si mesmo 
+usando `kill()`. É similar ao `raise()`, mas requer que o processo saiba o seu próprio PID. 
+* **Código-Fonte:** 
+    ```cpp 
+    // (p. 205) 
+    #include <iostream> 
+    #include <csignal> 
+    #include <unistd.h> 
+     
+    using namespace std; 
+     
+    void signal_handler(int signum) { 
+       cout << "Processo será interrompido pelo sinal: (" << signum << ")." << endl; 
+       exit(signum); 
+    } 
+     
+    int main () { 
+        int pid, i = 0; 
+        pid = getpid(); // (p. 205, linha 19) 
+         
+        // (Nota: O livro usa SIGUSR1, vamos capturar SIGUSR1) 
+        signal(SIGUSR1, signal_handler);  
+         
+        while (++i) { 
+            cout << "Dentro do laço de repetição infinito." << endl; 
+            if( i == 5) { 
+                kill(pid, SIGUSR1); // (p. 205, linha 22) 
+            } 
+            sleep(1); 
+        } 
+        return 0; 
+    } 
+    ``` 
+* **Análise da Saída:** 
+    * *Comando de Compilação:* `g++ -o killsignal killsignal.cpp` 
+    * *Saída da Execução:* 
+        ```bash 
+        Dentro do laço de repetição infinito.
+        Dentro do laço de repetição infinito.
+        Dentro do laço de repetição infinito.
+        Dentro do laço de repetição infinito.
+        Dentro do laço de repetição infinito.
+        Processo será interrompido pelo sinal: (10).
+        ``` 
+    * *Breve Descrição:* Durante os primeiros 5 segundos, o programa imprime uma mensagem repetidamente .	Quando i==5, o comando kill(pid, SIGUSR1) é chamado. 	Isso envia o sinal SIGUSR1 (10) para o próprio processo. 	Como o programa registrou um handler (signal_handler), essa função é chamada em vez de encerrar silenciosamente. 	O handler imprime " Processo será interrompido pelo sinal: (10)." e depois chama exit(signum), encerrando o programa. 	Resultado: o programa parou sozinho após 5 segundos, porque ele mesmo se enviou o sinal usando kill().
 
 
+
+#### `forksignal.cpp` (Livro-Texto p. 206) 
+ 
+* **Objetivo do Código:** Um exemplo complexo de IPC usando sinais. O processo-pai e o 
+processo-filho se comunicam: o pai envia um sinal para o filho (`SIGUSR1`), e o filho envia um 
+sinal de volta para o pai (`SIGUSR1`). 
+* **Código-Fonte:** 
+    ```cpp 
+    // (p. 206) 
+    #include <iostream> 
+    #include <csignal> 
+    #include <unistd.h> 
+    #include <sys/wait.h> 
+ 
+    using namespace std; 
+ 
+    void signal_parent_handler(int signum) { 
+        cout << "Processo (PAI) recebeu sinal: (" << signum << ")." << endl; 
+    } 
+ 
+    void signal_child_handler(int signum) { 
+        cout << "Processo (FILHO) recebeu sinal: (" << signum << ")." << endl; 
+    } 
+ 
+    int main () { 
+        pid_t pid; 
+        pid = fork(); 
+ 
+        if (pid < 0) { 
+            cerr << "Erro no fork" << endl; 
+            return 1; 
+        } 
+        else if (pid == 0) { 
+            // Processo Filho 
+            signal(SIGUSR1, signal_child_handler); 
+            cout << "Processo filho aguardando sinal..." << endl; 
+            pause(); // Espera pelo sinal do pai (p. 206, linha 32) 
+             
+            cout << "Filho enviando sinal de volta ao pai..." << endl; 
+            kill(getppid(), SIGUSR1); // Envia sinal para o pai (p. 206, linha 34) 
+            exit(0); 
+        } 
+        else { 
+            // Processo Pai 
+            signal(SIGUSR1, signal_parent_handler); 
+            sleep(2); // Garante que o filho está pronto e esperando 
+             
+            cout << "Pai enviando sinal para o filho " << pid << "." << endl; 
+            kill(pid, SIGUSR1); // (p. 206, linha 38) 
+             
+            cout << "Processo pai aguardando resposta..." << endl; 
+            pause(); // Espera pelo sinal do filho (p. 206, linha 40) 
+             
+            wait(NULL); // Limpa o filho 
+            cout << "Pai terminando." << endl; 
+        } 
+        return 0; 
+    } 
+    ``` 
+* **Análise da Saída:** 
+    * *Comando de Compilação:* `g++ -o forksignal forksignal.cpp` 
+    * *Saída da Execução:* 
+        ```bash 
+        Processo filho aguardando sinal...
+        Pai enviando sinal para o filho 863.
+        Processo pai aguardando resposta...
+        Processo (FILHO) recebeu sinal: (10).
+        Filho enviando sinal de volta ao pai...
+        Processo (PAI) recebeu sinal: (10).
+        Pai terminando. 
+        ``` 
+    * *Breve Descrição:*
+ -  O filho inicia, instala o handler e chama , ficando bloqueado aguardando um sinal.
+ - 	O pai instala seu handler, espera 2 segundos para garantir que o filho esteja pronto, e envia  ao filho.
+ - 	O filho recebe o sinal, executa , imprime a mensagem e depois envia  de volta ao pai.
+ - 	O pai, que estava em , recebe o sinal do filho, executa  e imprime sua mensagem.
+ - 	O pai chama  para limpar o processo filho e encerra.
+   
+ -	Função do pause():
+ -	No filho,  suspende a execução até que o sinal do pai chegue.
+ -	No pai,  suspende a execução até que o sinal do filho chegue.
+ -	Isso garante a sincronização: cada processo só continua quando recebe o sinal esperado.
 
    
+--- 
+### Códigos do Capítulo 9 (Redes) 
+ 
+#### `resolveaied.cpp` (Livro-Texto p. 264) 
+ 
+* **Objetivo do Código:** Demonstrar uma consulta DNS básica. O programa usa a função 
+`gethostbyname` para traduzir um nome de domínio (`www.aied.com.br`) em seu endereço IP. 
+* **Código-Fonte:** 
+    ```cpp 
+    // (p. 264, versão simples) 
+    #include <netdb.h> 
+    #include <arpa/inet.h> 
+    #include <iostream> 
+ 
+    int main() { 
+        struct hostent *he; 
+        char *ip; 
+ 
+        he = gethostbyname("[www.aied.com](https://www.aied.com).br"); // (p. 264, linha 9) 
+        if (he) { 
+            ip = inet_ntoa(*(struct in_addr*) he->h_addr_list[0]); 
+            std::cout << ip << std::endl; 
+        } else { 
+            std::cerr << "Erro ao resolver host." << std::endl; 
+        } 
+        return 0; 
+    } 
+    ``` 
+* **Análise da Saída:** 
+    * *Comando de Compilação:* `g++ -o resolveaied resolveaied.cpp` 
+    * *Saída da Execução:* 
+        ```bash 
+        Erro ao resolver host.
+        ``` 
+    * *Breve Descrição:* Essa saída se deve ao fato de que o domínio não está acessível no momento.
 
+   #### `testport.cpp` (Livro-Texto p. 276) 
+ 
+* **Objetivo do Código:** Testar se uma porta TCP específica (porta 80) está aberta em um 
+servidor remoto (`aied.com.br`). Requer a biblioteca SFML. 
+* **Código-Fonte:** 
+    ```cpp 
+    // (p. 276) 
+    #include <iostream> 
+    #include <SFML/Network.hpp> // (p. 276, linha 2) 
+    #include <string> 
+ 
+    static bool port_is_open(const std::string& address, int port) { // (p. 276, linha 5) 
+        return (sf::TcpSocket().connect(address, port) == sf::Socket::Done); 
+    } 
+ 
+    int main() { 
+        std::cout << "Testando Porta 80: aied.com.br" << std::endl; // (p. 276, linha 13) 
+        if ( port_is_open("aied.com.br", 80) ) 
+            std::cout << "Porta está ABERTA" << std::endl; 
+        else 
+            std::cout << "Porta está FECHADA" << std::endl; 
+        return 0; 
+    } 
+    ``` 
+* **Análise da Saída:** 
+    * *Comando de Compilação:* `g++ -o testport testport.cpp -lsfml-network -lsfml-system` 
+    * *Saída da Execução:* 
+        ```bash 
+        Testando Porta 80: aied.com.br
+        Porta está ABERTA
+        ``` 
+    * *Breve Descrição:* A função port_is_open() tenta conectar à porta TCP 80 do domínio aied.com.br - estava aberta.
+
+
+
+  #### `getcurl.cpp` (Livro-Texto p. 283-284) 
+ 
+* **Objetivo do Código:** Demonstrar como fazer o download de um arquivo (uma imagem 
+`.iso`) de uma URL usando a biblioteca `libcurl` em C++. 
+* **Código-Fonte:** 
+    ```cpp 
+    // (p. 283-284) 
+    #include <stdio.h> 
+    #include <curl/curl.h> // (p. 283, linha 2) 
+ 
+    int main(void) { 
+        CURL *curl; 
+        FILE *fp; 
+        CURLcode res; 
+         
+        char url[] = 
+"[http://www.aied.com.br/linux/download/output_image.iso](http://www.aied.com.br/linux/download/out
+ put_image.iso)"; // (p. 283, linha 8) 
+        char outfilename[FILENAME_MAX] = "/tmp/output_image.iso"; // (p. 283, linha 9) 
+         
+        curl = curl_easy_init(); 
+        if (curl) { 
+            fp = fopen(outfilename, "wb"); // (p. 284, linha 12) 
+            curl_easy_setopt(curl, CURLOPT_URL, url); 
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL); 
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp); 
+            res = curl_easy_perform(curl); 
+             
+            curl_easy_cleanup(curl); 
+            fclose(fp); 
+             
+            if (res == CURLE_OK) 
+                printf("Download concluído com sucesso para /tmp/output_image.iso\n"); 
+            else 
+                printf("Erro no download: %s\n", curl_easy_strerror(res)); 
+        } 
+        return 0; 
+    } 
+    ``` 
+* **Análise da Saída:** 
+    * *Comando de Compilação:* `g++ -o getcurl getcurl.cpp -lcurl` 
+    * *Saída da Execução:* 
+        ```bash
+        userlinux@debian:~$ ./getcurl
+        Download concluído com sucesso para /tmp/output_image.iso
+        userlinux@debian:~$ ls -lh /tmp/output_image.iso
+        -rw-r--r-- 1 userlinux userlinux 795 Nov 27 00:28 /tmp/output_image.iso
+        ``` 
+    * *Breve Descrição:* O programa tenta baixar o arquivo .iso da URL http://www.aied.com.br/linux/download/output_image.iso usando a biblioteca libcurl. 	Ele salva o conteúdo em tmp/output_image.iso, 	se o download for bem-sucedido, imprime uma mensagem de sucesso;	Se falhar imprime o erro retornado por curl_easy_strerror(res). Em caso de sucesso, o comando  ls -lh /tmp/output_image.iso traz informações sobre o arquivo baixado, que no caso possui 795kb.
+
+
+ #### `postjson.cpp` (Livro-Texto p. 284-285) 
+ 
+* **Objetivo do Código:** Demonstrar como enviar dados (um payload JSON) para um 
+servidor web usando o método `POST` com a `libcurl`. 
+* **Código-Fonte:** 
+    ```cpp 
+    // (p. 284-285) 
+    #include <stdio.h> 
+    #include <curl/curl.h> 
+    #include <string> 
+ 
+    int main(void) { 
+        CURLcode ret; 
+        CURL *hnd; 
+        struct curl_slist *slist1; 
+         
+        std::string jsonstr = "{\"username\":\"aied\",\"password\":\"123456\"}"; // (p. 284, linha 10) 
+     
+        slist1 = NULL; 
+        slist1 = curl_slist_append(slist1, "Content-Type: application/json"); // (p. 284, linha 13) 
+     
+        hnd = curl_easy_init(); 
+        curl_easy_setopt(hnd, CURLOPT_URL, 
+"[http://www.aied.com.br/linux/download/echo.php](http://www.aied.com.br/linux/download/echo.php)")
+ ; // (p. 284, linha 18) 
+        curl_easy_setopt(hnd, CURLOPT_POSTFIELDS, jsonstr.c_str()); 
+        curl_easy_setopt(hnd, CURLOPT_USERAGENT, "curl/7.38.0"); 
+        curl_easy_setopt(hnd, CURLOPT_HTTPHEADER, slist1); 
+        curl_easy_setopt(hnd, CURLOPT_CUSTOMREQUEST, "POST"); // (p. 285, linha 23) 
+         
+        ret = curl_easy_perform(hnd); 
+     
+        curl_easy_cleanup(hnd); 
+        hnd = NULL; 
+        curl_slist_free_all(slist1); 
+        slist1 = NULL; 
+         
+        return 0; 
+    } 
+    ``` 
+* **Análise da Saída:** 
+    * *Comando de Compilação:* `g++ -o postjson postjson.cpp -lcurl` 
+    * *Saída da Execução:* 
+        ```bash 
+          <!DOCTYPE html>
+         <html style="height:100%">
+         <head>
+         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+         <title> 301 Moved Permanently
+         </title><style>@media (prefers-color-scheme:dark){body{background-color:#000!important}}</style></head>
+         <body style="color: #444; margin:0;font: normal 14px/20px Arial, Helvetica, sans-serif; height:100%; background-color: #fff;">
+        <div style="height:auto; min-height:100%; ">     <div style="text-align: center; width:800px; margin-left: -400px; position:absolute; top: 30%; left:50%;">
+        <h1 style="margin:0; font-size:150px; line-height:150px; font-weight:bold;">301</h1>
+        <h2 style="margin-top:20px;font-size: 30px;">Moved Permanently
+         </h2>
+         <p>The document has been permanently moved.</p>
+         </div></div></body></html>
+         
+    * *Breve Descrição:* O servidor respondeu com um código HTTP 301, que indica que o recurso foi movido para outra URL.	Em vez de retornar o JSON esperado, o servidor enviou uma página HTML de redirecionamento.	Isso acontece quando o endereço original foi alterado ou removido.
+ 
+
+  
+#### `download.sh` (Livro-Texto p. 285-286) 
+ 
+* **Objetivo do Código:** Criar um script de download robusto que baixa arquivos de uma lista 
+(`urls.txt`) e tenta novamente (`--retry`) em caso de falha, continuando de onde parou (`-C`). 
+* **Código-Fonte:** 
+    *(Nota: Crie o arquivo `urls.txt` em `~/Downloads/` antes, contendo a URL: 
+http://www.aied.com.br/linux/download/output_image.iso)* 
+    ```bash 
+    #!/bin/bash 
+    # (p. 285-286) 
+     
+    # (Variável para o diretório de downloads do usuário atual) 
+    DOWNLOAD_DIR="/home/$(whoami)/Downloads" 
+    URL_FILE="$DOWNLOAD_DIR/urls.txt" 
+     
+    # (Cria o diretório e o arquivo se não existirem) 
+    mkdir -p $DOWNLOAD_DIR 
+    echo 
+"[http://www.aied.com.br/linux/download/output_image.iso](http://www.aied.com.br/linux/download/out
+ put_image.iso)" > $URL_FILE 
+     
+    cd $DOWNLOAD_DIR 
+     
+    while true 
+    do 
+        # (O comando xargs lê o arquivo e passa a URL para o curl) 
+        # (Removido o parâmetro -x socks5h... para TOR, conforme nota do manual) 
+        xargs -n 1 curl -L -O --output-dir $DOWNLOAD_DIR -k --retry 999999999999 --retry-max-time 0 -C - < $URL_FILE 
+         
+        echo "Loop esperando 30s..." 
+        sleep 30 
+    done 
+    ``` 
+* **Análise da Saída:** 
+    * *Comando de Execução:* `chmod +x download.sh` e depois `./download.sh` (use `Ctrl+C` para 
+parar o loop) 
+    * *Saída da Execução:* 
+        ```bash 
+         % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+         100   795  100   795    0     0   2644      0 --:--:-- --:--:-- --:--:--  2658
+         100  364k  100  364k    0     0   255k      0  0:00:01  0:00:01 --:--:--  708k
+        Loop esperando 30s...
+        ``` 
+    * *Breve Descrição:* O xargs vai ler a URL do arquivo urls.txt. 	O curl vai tentar baixar o arquivo para ~/Downloads/output_image.iso.	O loop while true vai repetir a cada 30 segundos.	Se o download falhar, o --retry e -C - fazem o curl tentar novamente e continuar de onde parou.
