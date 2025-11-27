@@ -105,3 +105,78 @@ o que você esperava para a sua partição raiz? Por quê?)
 A saída foi a esperada pois o dispositivo que apareceu na saída do programa foi /dev/sda1; é o esperado para a partição raiz () do sistema, pois em instalações típicas do Linux — especialmente em ambientes de máquina virtual — o disco principal costuma ser identificado como sda, e a primeira partição como sda1.
 
 
+* **Objetivo do Código:** Usar a biblioteca `libblkid` para listar todas as partições de um disco 
+(ex: `/dev/sda`) e imprimir seus atributos, como **UUID**, **LABEL** e **TYPE**. 
+* **Código-Fonte:** 
+    ```c 
+    #include <stdio.h> 
+    #include <string.h> 
+    #include <err.h> 
+    #include <blkid/blkid.h> 
+ 
+    int main (int argc, char *argv[]) { 
+        if (argc != 2) { 
+            fprintf(stderr, "Uso: %s <dispositivo>\nEx: %s /dev/sda\n", argv[0], argv[0]); 
+            return 1; 
+        } 
+         
+        blkid_probe pr = blkid_new_probe_from_filename(argv[1]); 
+        if (!pr) { 
+            err(1, "Falha ao abrir %s", argv[1]); 
+        } 
+ 
+        blkid_partlist ls; 
+        int nparts, i; 
+ 
+        ls = blkid_probe_get_partitions(pr); 
+        if (!ls) { 
+             err(1, "Falha ao obter partições de %s", argv[1]); 
+        } 
+ 
+        nparts = blkid_partlist_numof_partitions(ls); 
+        printf("Número de partições em %s: %d\n", argv[1], nparts); 
+ 
+        const char *uuid, *label, *type; 
+ 
+        for (i = 0; i < nparts; i++) { 
+             char dev_name[20]; 
+             // (Cria o nome da partição, ex: /dev/sda + 1 = /dev/sda1) 
+             sprintf(dev_name, "%s%d", argv[1], (i+1)); 
+              
+             blkid_probe pr_part = blkid_new_probe_from_filename(dev_name); 
+             if (!pr_part) continue;  
+              
+             blkid_do_probe(pr_part); 
+              
+             blkid_probe_lookup_value(pr_part, "UUID", &uuid, NULL); 
+             blkid_probe_lookup_value(pr_part, "LABEL", &label, NULL); 
+             blkid_probe_lookup_value(pr_part, "TYPE", &type, NULL); 
+              
+             printf("  Partição: %s, UUID=%s, LABEL=%s, TYPE=%s\n", dev_name,  
+                    (uuid ? uuid : "null"), (label ? label : "null"), (type ? type : "null")); 
+              
+             blkid_free_probe(pr_part); 
+        } 
+         
+        blkid_free_probe(pr); 
+        return 0; 
+    } 
+    ``` 
+* **Análise da Saída:** 
+    * *Comando de Compilação:* `gcc -o getuuid getuuid.c -lblkid` 
+    * *Saída da Execução:* (Execute com `sudo ./getuuid /dev/sda`) 
+        ```bash 
+Número de partições em /dev/sda: 3
+  Partição: /dev/sda1, UUID=c3c36174-8146-445e-9db2-1f048f98c2c6, LABEL=null, TYPE=ext4
+  Partição: /dev/sda2, UUID=�ST��U, LABEL=null, TYPE=�WT��U
+  ``` 
+    * *Breve Descrição:* O programa conseguiu identificar que o disco /dev/sda possui 3 partições.
+- A primeira (/dev/sda1) foi corretamente reconhecida como ext4, com um UUID válido.
+- Já a segunda (/dev/sda2) apresentou valores truncados ou corrompidos (UUID= ST U, TYPE= WT U), o que indica que o blkid não conseguiu interpretar corretamente os metadados dessa partição. Isso pode acontecer em casos como:
+- Partição sem sistema de arquivos formatado.
+- Partição reservada ou usada por outro tipo de estrutura (ex.: LVM, criptografia).
+- Erro de leitura ou ausência de LABEL/UUID definidos.
+
+
+
+
