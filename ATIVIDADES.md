@@ -184,11 +184,11 @@ A saída foi a esperada pois o dispositivo que apareceu na saída do programa fo
     * *Comando de Compilação:* `gcc -o getuuid getuuid.c -lblkid` 
     * *Saída da Execução:* (Execute com `sudo ./getuuid /dev/sda`) 
         ```bash 
-Número de partições em /dev/sda: 3
-  Partição: /dev/sda1, UUID=c3c36174-8146-445e-9db2-1f048f98c2c6, LABEL=null, TYPE=ext4
-  Partição: /dev/sda2, UUID=�ST��U, LABEL=null, TYPE=�WT��U
-  ``` 
-    * *Breve Descrição:* O programa conseguiu identificar que o disco /dev/sda possui 3 partições.
+       Número de partições em /dev/sda: 3
+       Partição: /dev/sda1, UUID=c3c36174-8146-445e-9db2-1f048f98c2c6, LABEL=null, TYPE=ext4
+       Partição: /dev/sda2, UUID=�ST��U, LABEL=null, TYPE=�WT��U
+  ```
+ *Breve Descrição:* O programa conseguiu identificar que o disco /dev/sda possui 3 partições.
 - A primeira (/dev/sda1) foi corretamente reconhecida como ext4, com um UUID válido.
 - Já a segunda (/dev/sda2) apresentou valores truncados ou corrompidos (UUID= ST U, TYPE= WT U), o que indica que o blkid não conseguiu interpretar corretamente os metadados dessa partição. Isso pode acontecer em casos como:
 - Partição sem sistema de arquivos formatado.
