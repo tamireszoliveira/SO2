@@ -9,7 +9,7 @@ Markdown
  
 **Nome do Aluno:** Tamires Alexandre de  Oliveira
 **Turno:** Noite
-**Data do Último Commit:** 26/11/2025 
+**Data do Último Commit:** 27/11/2025 
  
  --- 
  
@@ -62,7 +62,7 @@ O objetivo foi mostrar a localização de processos python ativos no sistema uti
 
 - No diretório pessoal, foi gerada a localidade en_US.UTF-8 com o comando sudo locale-gen"en_US.UTF-8", garantindo compatibilidade com ferramentas e scripts.
 - Foi usado o comando script para iniciar o registro da sessão, que grava todas as ações realizadas no terminal.
-- Utilizou-se o comando ps aux | grep python para listar todos os processos ativos e filtrar aqueles relacionados ao Python.
+- Foi usado o comando ps aux | grep python para listar todos os processos ativos e filtrar aqueles relacionados ao Python.
 - Encerrada a sessão com o comando exit.
 - Por fim, a validação da prática com o comando sudo aied validar prc0001 checkpoint01, que analisou o conteúdo do arquivo typescript e confirmou a execução correta dos comandos.
 Evidência de Validação:
@@ -79,7 +79,8 @@ Evidência de Validação:
  
 #### Prática 0002 checkpoint03 (Livro-Texto p. 286)
 
-
+Não foi possível realizar a prática :(
+Erro no nano onde o cursor travou em uma tela preta, foram tomadas providências como troca de terminal, gerenciamento de memória, ajuste de vídeo da vm verificação do modo de vídeo GRUB e modo de recuperação selecionando o kernel com recovery mode - mas sem sucesso.
 
 ### Códigos do Capítulo 6 (Discos e Montagem) 
  
@@ -323,8 +324,8 @@ memória separados.
         Processo pai: Variavel Global: 2 Variável Funcao: 20
         userlinux@debian:~$ Processo filho:  Variavel Global: 3 Variável Funcao: 21
         ``` 
-    * *Breve Descrição:* 	A variável  e  têm valores diferentes porque o processo filho recebe uma cópia do espaço de memória do pai, e modifica suas próprias cópias.
-     	O processo filho incrementa ambas as variáveis ( e ), enquanto o pai mantém os valores originais. 	O processo que termina primeiro varia a cada execução. Como não há sincronização explícita, o sistema decide qual processo imprime primeiro.
+    * *Breve Descrição:* 	As variáveis têm valores diferentes porque o processo filho recebe uma cópia do espaço de memória do pai, e modifica suas próprias cópias.
+     	O processo filho incrementa ambas as variáveis, enquanto o pai mantém os valores originais. 	O processo que termina primeiro varia a cada execução. Como não há sincronização explícita, o sistema decide qual processo imprime primeiro.
 
       #### `usewait.cpp` (Livro-Texto p. 193) 
  
@@ -372,8 +373,8 @@ continuar.
         PID do pai: 646
         PID do filho (retornado por wait): 647
         ``` 
-    * *Breve Descrição:* A linha  sempre aparece antes de , porque o pai chama  e fica bloqueado até o filho terminar.
-    	O PID do filho é impresso pelo processo-pai porque a função  retorna o identificador do processo-filho que terminou.
+    * *Breve Descrição:* A linha  "Pai esperando o filho terminar..."  sempre aparece antes de "Saindo do processo filho.", porque o pai chama wait(NULL) e fica bloqueado até o filho terminar.
+    	O PID do filho é impresso pelo processo-pai porque a função wait() retorna o identificador do processo-filho que terminou.
     	Isso demonstra que o pai só continua sua execução após o término do filho, garantindo ordem e sincronização entre os processos
 
 
@@ -482,7 +483,7 @@ filhos, e então espera por *cada um* deles especificamente, coletando seus cód
         ``` 
     * *Breve Descrição:*
 -  Os PIDs dos filhos não necessariamente aparecem em ordem crescente, pois dependem de como o sistema operacional atribui e agenda os processos.
-- 	Os códigos de status (100–104) aparecem em ordem, porque o laço  no pai chama  para cada filho específico, garantindo que o pai espere cada PID na sequência em que foram criados.
+- 	Os códigos de status (100–104) aparecem em ordem, porque o laço for no pai chama waitpid() para cada filho específico, garantindo que o pai espere cada PID na sequência em que foram criados.
 A diferença entre wait() e waitpid() é que:
 -  wait() Apenas espera qualquer filho terminar, sem controle sobre qual.
 -  waitpid() Permite ao pai esperar um filho específico (pelo PID), dando controle e previsibilidade sobre a ordem de coleta dos resultados.
@@ -535,10 +536,10 @@ inseguro) para `fork + exec + wait`. O programa C++ pausa, executa um comando de
         Executado
         ``` 
     * *Breve Descrição:*
-- O comando  faz o programa pausar e executar o comando de shell .
-- 	Como o  internamente faz , o processo principal espera o comando terminar antes de continuar.
-- 	Por isso, a listagem de arquivos aparece antes da palavra .
-- 	Só depois que o comando  termina, o programa imprime  e encerra.
+- O comando system() faz o programa pausar e executar o comando de shell ls -l.
+- 	Como o system() internamente faz fork + exec + wait, o processo principal espera o comando terminar antes de continuar.
+- 	Por isso, a listagem de arquivos aparece antes da palavra Executado.
+- 	Só depois que o comando ls -l termina, o programa imprime  e encerra.
 
 #### `pop.cpp` (Livro-Texto p. 197) 
  
@@ -604,7 +605,7 @@ processá-la linha por linha.
     * *Breve Descrição:*
  - A diferença para o programa system.cpp é que lá o comando ls -l era executado e sua saída ia direto para o terminal, sem intervenção do programa.
  -	Com popen(), o programa captura a saída do comando e pode processá-la linha por linha;	Isso permite manipular, filtrar ou transformar a saída antes de exibi-la.
- - 	No exemplo, cada linha da listagem é prefixada com "Linha:", mostrando que o programa tem controle sobre o texto retornado pelo comando.
+ - 	Cada linha da listagem é prefixada com "Linha:", mostrando que o programa tem controle sobre o texto retornado pelo comando.
 
 
    #### `receivesignal.cpp` (Livro-Texto p. 203) 
@@ -746,7 +747,7 @@ SIGINT.
         Dentro do laço de repetição infinito.
         Auto-sinal recebido: (2).
         ``` 
-    * *Breve Descrição:* Durante os primeiros 5 segundos, o programa imprime repetidamente "dentro do laço de repetição infinita".	Quando i ==5, o comando raise(SIGINT) é chamado. Isso     envia o sinal SIGINT (2) para o próprio processo. 	Como o programa registrou um handler (), essa função é chamada em vez de encerrar silenciosamente.	O handler imprime "Auto-sinal      recebido: (2) e depois chama exit(signum), encerrando o programa sozinho depois de 5s.
+    * *Breve Descrição:* Durante os primeiros 5 segundos, o programa imprime repetidamente "dentro do laço de repetição infinita".	Quando i ==5, o comando raise(SIGINT) é chamado. Isso     envia o sinal SIGINT (2) para o próprio processo. 	Como o programa registrou um handler signal_handler(), essa função é chamada em vez de encerrar silenciosamente.	O handler imprime "Auto-sinal recebido: (2) e depois chama exit(signum), encerrando o programa sozinho depois de 5s.
 
       
  
@@ -871,11 +872,11 @@ sinal de volta para o pai (`SIGUSR1`).
         Pai terminando. 
         ``` 
     * *Breve Descrição:*
- -  O filho inicia, instala o handler e chama , ficando bloqueado aguardando um sinal.
- - 	O pai instala seu handler, espera 2 segundos para garantir que o filho esteja pronto, e envia  ao filho.
- - 	O filho recebe o sinal, executa , imprime a mensagem e depois envia  de volta ao pai.
- - 	O pai, que estava em , recebe o sinal do filho, executa  e imprime sua mensagem.
- - 	O pai chama  para limpar o processo filho e encerra.
+ -  O filho inicia, instala o handler e chama pause(), ficando bloqueado aguardando um sinal.
+ - 	O pai instala seu handler, espera 2 segundos para garantir que o filho esteja pronto, e envia kill(pid, SIGUSR1) ao filho.
+ - 	O filho recebe o sinal, executa signal_child_handler(), imprime a mensagem e depois envia kill(getpid(),SIGUSR1) de volta ao pai.
+ - 	O pai, que estava em pause(), recebe o sinal do filho, executa signal_parent_handler() e imprime sua mensagem.
+ - 	O pai chama wait(NULL) para limpar o processo filho e encerra.
    
  -	Função do pause():
  -	No filho,  suspende a execução até que o sinal do pai chegue.
