@@ -1,7 +1,6 @@
 (Início do Modelo ATIVIDADES.md) 
  
-Markdown 
- 
+
  
 # Projeto Final - Capítulos 6, 7 e 9 
  
